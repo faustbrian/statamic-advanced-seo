@@ -19,6 +19,7 @@ use Statamic\Facades\URL;
 use Statamic\Stache\Query\TermQueryBuilder;
 use Statamic\Support\Str;
 use Statamic\Tags\Context;
+use Statamic\Facades\Asset as AssetFacade;
 
 class ViewCascade extends BaseCascade
 {
