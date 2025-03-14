@@ -113,17 +113,23 @@ class ViewCascade extends BaseCascade
 
     public function ogImage(): ?Asset
     {
-        if($this->get('og_image') === '@null') {
+        if ($this->get('og_image') === '@null') {
             return null;
+        }
+
+        $result = $this->get('generate_social_images')
+            ? $this->get('generated_og_image') ?? $this->get('og_image')
+            : $this->get('og_image');
+
+        if ($result instanceof Asset) {
+            return $result;
         }
 
         if ($asset = AssetFacade::all()->firstWhere('path', $this->get('og_image'))) {
             return $asset;
         }
 
-        return $this->get('generate_social_images')
-            ? $this->get('generated_og_image') ?? $this->get('og_image')
-            : $this->get('og_image');
+        return null;
     }
 
     public function ogImagePreset(): array
