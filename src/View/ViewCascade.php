@@ -152,7 +152,7 @@ class ViewCascade extends BaseCascade
             ($this->has('twitter_summary_large_image')) => SocialImage::findModel('twitter_summary_large_image')['card'],
             ($this->has('twitter_summary_image')) => SocialImage::findModel('twitter_summary')['card'],
             default => Defaults::data('collections')->get('seo_twitter_card'),
-        };
+        } ?? '';
     }
 
     public function twitterImage(): ?Asset
