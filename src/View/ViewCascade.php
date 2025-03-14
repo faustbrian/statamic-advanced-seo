@@ -117,12 +117,12 @@ class ViewCascade extends BaseCascade
             return null;
         }
 
-        $result = $this->get('generate_social_images')
+        $asset = $this->get('generate_social_images')
             ? $this->get('generated_og_image') ?? $this->get('og_image')
             : $this->get('og_image');
 
-        if ($result instanceof Asset) {
-            return $result;
+        if ($asset instanceof Asset) {
+            return $asset;
         }
 
         if ($asset = AssetFacade::all()->firstWhere('path', $this->get('og_image'))) {
@@ -161,9 +161,19 @@ class ViewCascade extends BaseCascade
             return null;
         }
 
-        return $this->get('generate_social_images')
+        $asset = $this->get('generate_social_images')
             ? $this->get('generated_twitter_image') ?? $this->get($model['handle'])
             : $this->get($model['handle']);
+
+        if ($asset instanceof Asset) {
+            return $asset;
+        }
+
+        if ($asset = AssetFacade::all()->firstWhere('path', $asset)) {
+            return $asset;
+        }
+
+        return null;
     }
 
     public function twitterImagePreset(): array
