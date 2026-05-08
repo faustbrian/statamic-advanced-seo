@@ -43,6 +43,8 @@ class SourceFieldtype extends Fieldtype
 
         // Dont't save the value if it's the same as the field's default. We don't want to unnecessarily spam the entry data.
         if (Str::contains($this->config('default'), $data['source'])) {
+            $this->logSeoSourceCollapse($data);
+
             return null;
         }
 
@@ -231,5 +233,34 @@ class SourceFieldtype extends Fieldtype
             ($parent instanceof Term) => $parent->taxonomy()->title(),
             default => null,
         };
+    }
+
+    protected function logSeoSourceCollapse(array $data): void
+    {
+        try {
+            if (! in_array($this->field->handle(), ['seo_title', 'seo_description'], true)) {
+                return;
+            }
+
+            $parent = $this->field->parent();
+
+            if (! $parent instanceof Entry || $parent->id() !== 'c0c7f893-37e6-47f1-b404-ec3ee0f5299a') {
+                return;
+            }
+
+            logger()->info('seo-debug.source-collapse', [
+                'route' => optional(request()->route())->getName(),
+                'path' => request()->path(),
+                'field' => $this->field->handle(),
+                'entry_id' => $parent->id(),
+                'site' => $parent->locale(),
+                'origin_id' => optional($parent->origin())->id(),
+                'configured_default' => $this->config('default'),
+                'source' => $data['source'] ?? null,
+                'value' => $data['value'] ?? null,
+            ]);
+        } catch (\Throwable) {
+            // Ignore debug logging failures so instrumentation never affects requests.
+        }
     }
 }

@@ -48,6 +48,10 @@ class ServiceProvider extends AddonServiceProvider
         Actions\Statamic\GenerateSocialImages::class,
     ];
 
+    protected $subscribe = [
+        Subscribers\SeoDebugSubscriber::class,
+    ];
+
     protected $policies = [
         SeoVariables::class => Policies\SeoVariablesPolicy::class,
     ];

@@ -44,6 +44,13 @@ class SeoDefaultsController extends CpController
 
         $site = $request->site ?? Site::selected()->handle();
 
+        $this->logSeoDefaultsDebug('edit-before-create-localizations', $handle, $site, fn () => [
+            'type' => $this->type(),
+            'available_sites' => $set->sites()->values()->all(),
+            'existing_origin' => optional($set->in($site)?->origin())->locale(),
+            'existing_keys' => $set->in($site)?->data()->keys()->all(),
+        ]);
+
         if (! $set->availableInSite($site)) {
             return $this->redirectToIndex($set, $site);
         }
@@ -57,6 +64,15 @@ class SeoDefaultsController extends CpController
         $set = $set->createLocalizations($set->sites());
 
         $localization = $set->in($site);
+
+        $this->logSeoDefaultsDebug('edit-after-create-localizations', $handle, $site, fn () => [
+            'type' => $this->type(),
+            'origin' => optional($localization->origin())->locale(),
+            'is_root' => $localization->isRoot(),
+            'data_keys' => $localization->data()->keys()->all(),
+            'stored_seo_title' => $localization->data()->get('seo_title'),
+            'stored_seo_description' => $localization->data()->get('seo_description'),
+        ]);
 
         $blueprint = $localization->blueprint();
 
@@ -123,7 +139,24 @@ class SeoDefaultsController extends CpController
 
         $site = $request->site ?? Site::selected()->handle();
 
-        $localization = $set->in($site)->determineOrigin($set->sites());
+        $localization = $set->in($site);
+
+        $this->logSeoDefaultsDebug('update-before-determine-origin', $handle, $site, fn () => [
+            'type' => $this->type(),
+            'origin' => optional($localization?->origin())->locale(),
+            'is_root' => $localization?->isRoot(),
+            'localized' => $request->input('_localized'),
+            'request_seo_title' => $request->input('seo_title'),
+            'request_seo_description' => $request->input('seo_description'),
+        ]);
+
+        $localization = $localization->determineOrigin($set->sites());
+
+        $this->logSeoDefaultsDebug('update-after-determine-origin', $handle, $site, fn () => [
+            'type' => $this->type(),
+            'origin' => optional($localization->origin())->locale(),
+            'is_root' => $localization->isRoot(),
+        ]);
 
         $blueprint = $localization->blueprint();
 
@@ -139,7 +172,40 @@ class SeoDefaultsController extends CpController
 
         $localization = $localization->save();
 
+        $this->logSeoDefaultsDebug('update-after-save', $handle, $site, fn () => [
+            'type' => $this->type(),
+            'origin' => optional($localization->origin())->locale(),
+            'is_root' => $localization->isRoot(),
+            'stored_keys' => $localization->data()->keys()->all(),
+            'stored_seo_title' => $localization->data()->get('seo_title'),
+            'stored_seo_description' => $localization->data()->get('seo_description'),
+        ]);
+
         SeoDefaultSetSaved::dispatch($localization->seoSet());
+    }
+
+    protected function logSeoDefaultsDebug(string $phase, string $handle, string $site, callable $context): void
+    {
+        try {
+            if (! in_array($site, ['sv_SE', 'fi_FI', 'sv_FI', 'sv_EN'], true)) {
+                return;
+            }
+
+            if (! in_array($handle, ['pages', 'general', 'social_media'], true)) {
+                return;
+            }
+
+            logger()->info('seo-debug.defaults', array_merge([
+                'phase' => $phase,
+                'route' => optional(request()->route())->getName(),
+                'path' => request()->path(),
+                'user' => User::current()?->email(),
+                'handle' => $handle,
+                'site' => $site,
+            ], $context()));
+        } catch (\Throwable) {
+            // Ignore debug logging failures so instrumentation never affects requests.
+        }
     }
 
     protected function set(string $handle): SeoDefaultSet
