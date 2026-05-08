@@ -29,6 +29,7 @@ use Aerni\AdvancedSeo\Stache\SeoStore;
 use Aerni\AdvancedSeo\View\CascadeComposer;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Git;
@@ -71,6 +72,8 @@ class ServiceProvider extends AddonServiceProvider
 
     public function bootAddon(): void
     {
+        Event::subscribe(Subscribers\SeoDebugSubscriber::class);
+
         $this
             ->bootStores()
             ->bootNav()
