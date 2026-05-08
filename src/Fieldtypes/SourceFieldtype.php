@@ -41,32 +41,50 @@ class SourceFieldtype extends Fieldtype
             return $data;
         }
 
+        $this->logSeoSourceProcess('received', $data);
+
         // Dont't save the value if it's the same as the field's default. We don't want to unnecessarily spam the entry data.
         if (Str::contains($this->config('default'), $data['source'])) {
-            $this->logSeoSourceCollapse($data);
+            $this->logSeoSourceProcess('collapsed-to-null', $data);
 
             return null;
         }
 
         if ($data['source'] === 'default') {
+            $this->logSeoSourceProcess('return-default', $data);
+
             return '@default';
         }
 
         if ($data['source'] === 'auto') {
+            $this->logSeoSourceProcess('return-auto', $data);
+
             return '@auto';
         }
 
         // We only want to handle empty values that are not booleans. Booleans should be saved as such.
         if ($data['source'] === 'custom' && empty($data['value']) && ! is_bool($data['value'])) {
+            $this->logSeoSourceProcess('return-null-token', $data);
+
             return '@null';
         }
 
         // Handle the Code fieldtype.
         if ($this->sourceFieldtype() instanceof Code && $data['value']['code'] === '') {
+            $this->logSeoSourceProcess('return-null-token-code', $data);
+
             return '@null';
         }
 
-        return $this->sourceFieldtype()->process($data['value']);
+        $processed = $this->sourceFieldtype()->process($data['value']);
+
+        $this->logSeoSourceProcess('return-custom', [
+            'source' => $data['source'] ?? null,
+            'value' => $data['value'] ?? null,
+            'processed' => $processed,
+        ]);
+
+        return $processed;
     }
 
     public function preload(): array
@@ -235,7 +253,7 @@ class SourceFieldtype extends Fieldtype
         };
     }
 
-    protected function logSeoSourceCollapse(array $data): void
+    protected function logSeoSourceProcess(string $phase, array $data): void
     {
         try {
             if (! in_array($this->field->handle(), ['seo_title', 'seo_description'], true)) {
@@ -248,7 +266,8 @@ class SourceFieldtype extends Fieldtype
                 return;
             }
 
-            logger()->info('seo-debug.source-collapse', [
+            logger()->info('seo-debug.source-process', [
+                'phase' => $phase,
                 'route' => optional(request()->route())->getName(),
                 'path' => request()->path(),
                 'field' => $this->field->handle(),
@@ -258,6 +277,7 @@ class SourceFieldtype extends Fieldtype
                 'configured_default' => $this->config('default'),
                 'source' => $data['source'] ?? null,
                 'value' => $data['value'] ?? null,
+                'processed' => $data['processed'] ?? null,
             ]);
         } catch (\Throwable) {
             // Ignore debug logging failures so instrumentation never affects requests.
