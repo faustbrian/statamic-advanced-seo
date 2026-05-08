@@ -3,7 +3,9 @@
 namespace Aerni\AdvancedSeo\Support;
 
 use Aerni\AdvancedSeo\Data\DefaultsData;
+use Illuminate\Support\Str;
 use Statamic\Contracts\Entries\Entry;
+use Statamic\Facades\User;
 use Statamic\Tags\Context;
 
 class SeoDebug
@@ -19,10 +21,42 @@ class SeoDebug
                 return;
             }
 
-            logger()->info($event, $payload);
+            logger()->info($event, self::baseContext($payload));
         } catch (\Throwable) {
             // Ignore debug logging failures so instrumentation never affects requests.
         }
+    }
+
+    public static function baseContext(array $payload = []): array
+    {
+        try {
+            $request = request();
+        } catch (\Throwable) {
+            $request = null;
+        }
+
+        if (! $request) {
+            return array_merge([
+                'request_id' => 'cli-'.Str::uuid(),
+                'route' => null,
+                'path' => null,
+                'user' => null,
+            ], $payload);
+        }
+
+        $requestId = $request->attributes->get('seo_debug_request_id');
+
+        if (! is_string($requestId) || $requestId === '') {
+            $requestId = (string) Str::uuid();
+            $request->attributes->set('seo_debug_request_id', $requestId);
+        }
+
+        return array_merge([
+            'request_id' => $requestId,
+            'route' => optional($request->route())->getName(),
+            'path' => $request->path(),
+            'user' => User::current()?->email(),
+        ], $payload);
     }
 
     public static function isHomepageEntry(mixed $entry): bool

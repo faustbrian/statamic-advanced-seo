@@ -7,6 +7,7 @@ use Aerni\AdvancedSeo\Data\SeoVariables;
 use Aerni\AdvancedSeo\Events\SeoDefaultSetSaved;
 use Aerni\AdvancedSeo\Facades\Seo;
 use Aerni\AdvancedSeo\Models\Defaults;
+use Aerni\AdvancedSeo\Support\SeoDebug;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -195,14 +196,11 @@ class SeoDefaultsController extends CpController
                 return;
             }
 
-            logger()->info('seo-debug.defaults', array_merge([
+            logger()->info('seo-debug.defaults', SeoDebug::baseContext(array_merge([
                 'phase' => $phase,
-                'route' => optional(request()->route())->getName(),
-                'path' => request()->path(),
-                'user' => User::current()?->email(),
                 'handle' => $handle,
                 'site' => $site,
-            ], $context()));
+            ], $context())));
         } catch (\Throwable) {
             // Ignore debug logging failures so instrumentation never affects requests.
         }

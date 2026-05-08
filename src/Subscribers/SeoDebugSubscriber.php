@@ -2,11 +2,11 @@
 
 namespace Aerni\AdvancedSeo\Subscribers;
 
+use Aerni\AdvancedSeo\Support\SeoDebug;
 use Illuminate\Events\Dispatcher;
 use Statamic\Contracts\Entries\Entry;
 use Statamic\Events;
 use Statamic\Events\Event;
-use Statamic\Facades\User;
 
 class SeoDebugSubscriber
 {
@@ -39,11 +39,8 @@ class SeoDebugSubscriber
                 return;
             }
 
-            logger()->info('seo-debug.entry-event', array_merge([
+            logger()->info('seo-debug.entry-event', SeoDebug::baseContext(array_merge([
                 'phase' => $phase,
-                'route' => optional(request()->route())->getName(),
-                'path' => request()->path(),
-                'user' => User::current()?->email(),
                 'entry_id' => $entry->id(),
                 'site' => $entry->locale(),
                 'slug' => $entry->slug(),
@@ -51,7 +48,7 @@ class SeoDebugSubscriber
                 'stored_seo_title' => $entry->data()->get('seo_title'),
                 'stored_seo_description' => $entry->data()->get('seo_description'),
                 'stored_keys' => $entry->data()->keys()->all(),
-            ], $context));
+            ], $context)));
         } catch (\Throwable) {
             // Ignore debug logging failures so instrumentation never affects requests.
         }

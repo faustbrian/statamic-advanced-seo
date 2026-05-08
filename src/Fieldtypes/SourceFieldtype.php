@@ -4,6 +4,7 @@ namespace Aerni\AdvancedSeo\Fieldtypes;
 
 use Aerni\AdvancedSeo\Actions\EvaluateModelLocale;
 use Aerni\AdvancedSeo\Actions\GetDefaultsData;
+use Aerni\AdvancedSeo\Support\SeoDebug;
 use Aerni\AdvancedSeo\View\SourceFieldtypeCascade;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
@@ -266,10 +267,8 @@ class SourceFieldtype extends Fieldtype
                 return;
             }
 
-            logger()->info('seo-debug.source-process', [
+            logger()->info('seo-debug.source-process', SeoDebug::baseContext([
                 'phase' => $phase,
-                'route' => optional(request()->route())->getName(),
-                'path' => request()->path(),
                 'field' => $this->field->handle(),
                 'entry_id' => $parent->id(),
                 'site' => $parent->locale(),
@@ -278,7 +277,7 @@ class SourceFieldtype extends Fieldtype
                 'source' => $data['source'] ?? null,
                 'value' => $data['value'] ?? null,
                 'processed' => $data['processed'] ?? null,
-            ]);
+            ]));
         } catch (\Throwable) {
             // Ignore debug logging failures so instrumentation never affects requests.
         }
