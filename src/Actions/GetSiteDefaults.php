@@ -4,6 +4,7 @@ namespace Aerni\AdvancedSeo\Actions;
 
 use Aerni\AdvancedSeo\Data\DefaultsData;
 use Aerni\AdvancedSeo\Models\Defaults;
+use Aerni\AdvancedSeo\Support\SeoDebug;
 use Illuminate\Support\Collection;
 use Statamic\Facades\Blink;
 use Statamic\Facades\Site;
@@ -18,7 +19,7 @@ class GetSiteDefaults
             return collect();
         }
 
-        return Blink::once("advanced-seo::site::{$locale}", function () use ($locale, $data) {
+        $defaults = Blink::once("advanced-seo::site::{$locale}", function () use ($locale, $data) {
             $siteDefaults = Defaults::enabledInType('site')
                 ->flatMap(fn ($model) => GetAugmentedDefaults::handle(
                     new DefaultsData(
@@ -39,6 +40,19 @@ class GetSiteDefaults
 
             return $siteDefaults;
         });
+
+        SeoDebug::log('seo-debug.site-defaults', fn () => in_array($locale, ['sv_SE', 'fi_FI', 'sv_FI', 'sv_EN'], true) ? [
+            'route' => optional(request()->route())->getName(),
+            'path' => request()->path(),
+            'input_type' => is_object($data) ? get_class($data) : gettype($data),
+            'locale' => $locale,
+            'resolved_keys' => $defaults->keys()->all(),
+            'site_name' => $defaults->get('site_name')?->value(),
+            'title_separator' => $defaults->get('title_separator')?->value(),
+            'twitter_handle' => $defaults->get('twitter_handle')?->value(),
+        ] : null);
+
+        return $defaults;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Aerni\AdvancedSeo\Data;
 
 use Aerni\AdvancedSeo\Concerns\HasDefaultsData;
+use Aerni\AdvancedSeo\Support\SeoDebug;
 use Illuminate\Support\Collection;
 use Statamic\Contracts\Data\Augmentable;
 use Statamic\Contracts\Data\Augmented;
@@ -148,6 +149,19 @@ class SeoVariables implements Augmentable, Localization
                 ->merge($this->data());
         }
 
+        SeoDebug::log('seo-debug.with-default-data', fn () => SeoDebug::isRelevantDefaultsHandleSite($this->handle(), $this->locale()) ? [
+            'route' => optional(request()->route())->getName(),
+            'path' => request()->path(),
+            'type' => $this->type(),
+            'handle' => $this->handle(),
+            'locale' => $this->locale(),
+            'origin' => optional($this->origin())->locale(),
+            'is_root' => $this->isRoot(),
+            'data_keys' => $this->data()->keys()->all(),
+            'stored_seo_title' => $this->data()->get('seo_title'),
+            'stored_seo_description' => $this->data()->get('seo_description'),
+        ] : null);
+
         return $this;
     }
 
@@ -217,6 +231,18 @@ class SeoVariables implements Augmentable, Localization
         $this->locale === $origin
             ? $this->origin(null)
             : $this->origin($origin);
+
+        SeoDebug::log('seo-debug.determine-origin', fn () => SeoDebug::isRelevantDefaultsHandleSite($this->handle(), $this->locale()) ? [
+            'route' => optional(request()->route())->getName(),
+            'path' => request()->path(),
+            'type' => $this->type(),
+            'handle' => $this->handle(),
+            'locale' => $this->locale(),
+            'sites' => $sites->values()->all(),
+            'default_site' => $defaultSite,
+            'chosen_origin' => optional($this->origin())->locale(),
+            'is_root' => $this->isRoot(),
+        ] : null);
 
         return $this;
     }
